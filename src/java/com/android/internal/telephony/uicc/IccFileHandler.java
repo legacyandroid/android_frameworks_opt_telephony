@@ -539,7 +539,6 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                 data = result.payload;
 
                 if (UiccTlvData.isUiccTlvData(data)) {
-
                     UiccTlvData tlvData = UiccTlvData.parse(data);
 
                     if (tlvData.isIncomplete()) {
@@ -550,18 +549,17 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                     recordSize[0] = tlvData.mRecordSize;
                     recordSize[1] = tlvData.mFileSize;
                     recordSize[2] = tlvData.mNumRecords;
-
-                } else if (TYPE_EF == data[RESPONSE_DATA_FILE_TYPE] &&
-                    EF_TYPE_LINEAR_FIXED == data[RESPONSE_DATA_STRUCTURE]) {
+                } else {
+                    if (TYPE_EF != data[RESPONSE_DATA_FILE_TYPE] ||
+                        EF_TYPE_LINEAR_FIXED != data[RESPONSE_DATA_STRUCTURE]) {
+                        throw new IccFileTypeMismatch();
+                    }
 
                     recordSize = new int[3];
                     recordSize[0] = data[RESPONSE_DATA_RECORD_LENGTH] & 0xFF;
                     recordSize[1] = ((data[RESPONSE_DATA_FILE_SIZE_1] & 0xff) << 8)
-                            + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
+                           + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
                     recordSize[2] = recordSize[1] / recordSize[0];
-
-                } else {
-                    throw new IccFileTypeMismatch();
                 }
 
                 sendResult(response, recordSize, null);
@@ -582,7 +580,6 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                 path = lc.mPath;
 
                 if (UiccTlvData.isUiccTlvData(data)) {
-
                     UiccTlvData tlvData = UiccTlvData.parse(data);
 
                     if (tlvData.isIncomplete()) {
@@ -592,8 +589,10 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                     lc.mRecordSize = tlvData.mRecordSize;
                     lc.mCountRecords = tlvData.mNumRecords;
                     size = tlvData.mFileSize;
-
-                } else if (TYPE_EF == data[RESPONSE_DATA_FILE_TYPE]) {
+                } else {
+                    if (TYPE_EF != data[RESPONSE_DATA_FILE_TYPE]) {
+                        throw new IccFileTypeMismatch();
+                    }
 
                     if (EF_TYPE_LINEAR_FIXED != data[RESPONSE_DATA_STRUCTURE]) {
                         throw new IccFileTypeMismatch();
@@ -602,11 +601,9 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                     lc.mRecordSize = data[RESPONSE_DATA_RECORD_LENGTH] & 0xFF;
 
                     size = ((data[RESPONSE_DATA_FILE_SIZE_1] & 0xff) << 8)
-                            + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
+                           + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
 
                     lc.mCountRecords = size / lc.mRecordSize;
-                } else {
-                    throw new IccFileTypeMismatch();
                 }
 
                  if (lc.mLoadAll) {
@@ -638,8 +635,6 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                 fileid = msg.arg1;
 
                 if (UiccTlvData.isUiccTlvData(data)) {
-
-
                     UiccTlvData tlvData = UiccTlvData.parse(data);
 
                     if (tlvData.mFileSize < 0) {
@@ -647,18 +642,17 @@ public abstract class IccFileHandler extends Handler implements IccConstants {
                     }
 
                     size = tlvData.mFileSize;
-
-
-                } else if (TYPE_EF == data[RESPONSE_DATA_FILE_TYPE]) {
+                } else {
+                    if (TYPE_EF != data[RESPONSE_DATA_FILE_TYPE]) {
+                        throw new IccFileTypeMismatch();
+                    }
 
                     if (EF_TYPE_TRANSPARENT != data[RESPONSE_DATA_STRUCTURE]) {
                         throw new IccFileTypeMismatch();
                     }
 
                     size = ((data[RESPONSE_DATA_FILE_SIZE_1] & 0xff) << 8)
-                            + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
-                } else {
-                    throw new IccFileTypeMismatch();
+                           + (data[RESPONSE_DATA_FILE_SIZE_2] & 0xff);
                 }
 
                 mCi.iccIOForApp(COMMAND_READ_BINARY, fileid, getEFPath(fileid),
